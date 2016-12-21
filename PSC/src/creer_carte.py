@@ -10,19 +10,19 @@ import matplotlib.pyplot as plt
 from scipy import misc
 import time
 
-image_init=misc.imread('D:\Polytechnique\PSC\Carte\Carte2.png')
+image_init=misc.imread('D:\Polytechnique\PSC\Carte\Carte2.png') #Convertir image en tableau
 
 n,m=image_init.shape
 
-champVision=10
+champVision=10 #Champ de vision du drone considéré comme constant
 
-import heapq
+import heapq 
 
 
 
 class Noeud(object):
     
-    def __lt__(self, other):
+    def __lt__(self, other): #définition d'un ordre entre les noeuds
         return Noeud.comparer2Points(self, other)    
     
     def __init__(self,posX,posY,cout=0,heuristique=0,parent=False,obstacle=0):
@@ -73,7 +73,7 @@ class Noeud(object):
         self._parent=parent
         
     parent=property(_get_parent,_set_parent)
-    
+    #Déplacements Nord/Sud/Est/Ouest
     def NoeudDWN(noeud,Map):
         return(Map[noeud.posY+1][noeud.posX])
         
@@ -85,7 +85,7 @@ class Noeud(object):
         
     def NoeudEST(noeud,Map):
         return(Map[noeud.posY][noeud.posX-1])
-    
+    #Distance Vol d'oiseau
     def distance(noeud1,noeud2):
         return(abs(noeud1.posX-noeud2.posX)+abs(noeud1.posY-noeud2.posY))         
     
@@ -99,7 +99,12 @@ class Noeud(object):
     def position(noeud):
         return(noeud.posX+'   '+noeud.posY)
         
-    def planificationRoute(noeudI,noeudF,mapSeen,Map,n,m):
+    def planificationRoute(noeudI,noeudF,mapSeen,Map,n,m): 
+        '''
+        Algorithme similaire Dijkstra
+        heuristique= cout pour venir + distance au point final
+        liste de priorité déjà implémenté avec heapq + définition ordre des noeuds
+        '''
         openList= []
         heapq.heappush(openList,(0,noeudI))
         i=0
@@ -155,6 +160,7 @@ class Noeud(object):
             i=i+1
         return('impossible de trouver un chemin')
     
+    #On veut savoir si tout le chemin passe par des zones inconnues
     def cheminValide(planifroute,mapSeen,caseSeen):
         boolean=True
         i=0
@@ -177,7 +183,8 @@ class Noeud(object):
             noeud=openList[indice]
         return(openList[:indice]+[v]+openList[indice:])
             
-    '''        
+    '''
+    #ordre noeud
     def comparer2Points(noeud1,noeud2):
         if(noeud1.heuristique==-1):
             return False
@@ -190,6 +197,7 @@ class Noeud(object):
         else:
             return False
     
+    #Pour affiner la conversion image -> tableau 
     def binarise(tab, seuil):
         """Cette fonction renvoie un tableau représentant l'image binarisée"""
         #Fonction à compléter
@@ -203,7 +211,8 @@ class Noeud(object):
                else:
                    tab[i][j] = 1
         return (tab,hauteur,largeur)
-        
+       
+    #On voit rien au début
     def initMap(n,m):
         mapSeen=[]
         caseSeen=[]
@@ -215,7 +224,7 @@ class Noeud(object):
                 caseSeen[i][j]=False
         return mapSeen,caseSeen
 
-
+    #Mise à jour de ce que l'on voit
     def see(noeud, mapSeen, caseSeen, Map, champVision,n,m):
         posX=noeud.posX
         posY=noeud.posY
@@ -250,17 +259,17 @@ class Noeud(object):
         possible=True
         i=0
         while(cheminValide==False and possible==True):
-            liste=Noeud.planificationRoute(noeudI,noeudF,mapSeen,Map,n,m)
+            liste=Noeud.planificationRoute(noeudI,noeudF,mapSeen,Map,n,m) #trouve un chemin
             if(liste=='impossible de trouver un chemin'):
                 return(liste)
-            cheminValide=Noeud.cheminValide(liste,mapSeen,caseSeen)
+            cheminValide=Noeud.cheminValide(liste,mapSeen,caseSeen) #vérifie que le chemin passe par des endroits où on est sur de pouvoir passer
             '''
             print(Noeud.mapSeen(mapSeen))
             print(Noeud.visualisation(Noeud.mapSeen(mapSeen),liste))
             '''
-            Noeud.compteAZero(mapSeen,n,m)
+            Noeud.compteAZero(mapSeen,n,m) #on remet les couts/heuristiques/parents/obstacle a zero car la carte mapSeen change
             for v in liste:
-                 Noeud.see(v,mapSeen, caseSeen,Map,champVision,n,m)
+                 Noeud.see(v,mapSeen, caseSeen,Map,champVision,n,m) #carte mapSeen mise à jour, ie le drone suit le chemin liste pompé pour voir ce qu'il y a aux endroits inconnus
             mapSeen[posY_Init][posX_Init].cout=0
             print(i)
             i=i+1
