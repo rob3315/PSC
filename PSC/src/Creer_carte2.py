@@ -1,14 +1,17 @@
+'''
+Created on 30 déc. 2016
+
+@author: remi
+'''
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
 import time
-
 import heapq
 
 class Noeud(object):
-    
     def __lt__(self, other):
         return comparer2Points(self, other)    
     
@@ -32,15 +35,9 @@ class Noeud(object):
         self._posY=posY
         
     posY=property(_get_posY,_set_posY)
-    def _get_cout(self):
-        return(self._cout)
-    def _set_cout(self,cout):
-        self._cout=cout
-        
-    cout=property(_get_cout,_set_cout)
+
     def _get_heuristique(self):
         return(self._heuristique)
-    
     def _set_heuristique(self,heuristique):
         self._heuristique=heuristique
     heuristique=property(_get_heuristique,_set_heuristique)
@@ -49,13 +46,31 @@ class Noeud(object):
     def _set_parent(self,parent):
         self._parent=parent
     parent=property(_get_parent,_set_parent)
+    def __eq__(self,other):
+        return ((self._get_posX()==other._get_posX()) and (self._get_posY()==other._get_posY()))
     
-def NoeudDWN(noeud,Map):
-    return(Map[noeud.posY+1][noeud.posX])
+    def __lt__(self,other):
+        return (self.heuristique<other.heuristique)
+    def __gt__(self,other):
+        return (self.heuristique>other.heuristique)
+
+class A_star(object):
+    def __init__(self, noeudI,noeudF,wold_map,heuristique):
+        self.noeudI=noeudI
+        self.noeudF=noeudF
+        self.wold_map=wold_map
+        self.heuristique=heuristique # a fonction wich given a node give
+    def start(self):
+        q_liste=[]
+        q=heapq.heappush(q_liste, self.noeudI) # q is the heap wich give us
         
+
+
+def NoeudDWN(noeud,Map):
+    return(Map[noeud.posY+1][noeud.posX])      
 def NoeudUP(noeud,Map):
     return(Map[noeud.posY-1][noeud.posX])
-
+        
 def NoeudWST(noeud,Map):
     return(Map[noeud.posY][noeud.posX+1])
         
@@ -117,17 +132,10 @@ def planificationRoute(noeudI, noeudF, mapSeen, Map, n, m):
         for v in Voisin:
                 
             if((v.cout>noeud.cout+1 or v.cout<=-1) and v.obstacle==0):
-                '''
-                print('/////////////////////////////////////////////////////////////////////////////')
-                print(Noeud.imprime(noeud),Noeud.imprime(v))
-                '''
                 v.cout=cout+1
                 v.heuristique=cout+1+distance(v,noeudF)
                 v.parent=noeud
                 mapSeen[v.posY][v.posX]=v
-                '''
-                print(Noeud.imprime(v),Noeud.imprime(v.parent))
-                '''
                 heapq.heappush(openList,(v.heuristique,v))
         i=i+1
     return('impossible de trouver un chemin')
@@ -142,19 +150,7 @@ def cheminValide(planifroute,mapSeen,caseSeen):
         boolean=(boolean1 and boolean2)
         i=i+1
     return(boolean)
-'''    
-def ajouteOrdre(openList,v):
-    #On imagine openList deja triee en fonction de leure heuristique
-    if(openList==[]):
-        return([v])
-    noeud=openList[0]
-    indice=0
-    while(Noeud.comparer2Points(noeud,v)==True and indice+1<len(openList)):
-        indice=indice+1
-        noeud=openList[indice]
-    return(openList[:indice]+[v]+openList[indice:])
-            
-'''        
+      
 def comparer2Points(noeud1,noeud2):
     if(noeud1.heuristique==-1):
         return False
@@ -193,7 +189,6 @@ def initMap(n,m):
             caseSeen[i][j]=False
     return mapSeen,caseSeen
 
-
 def see(noeud, mapSeen, caseSeen, Map, champVision,n,m):
     posX=noeud.posX
     posY=noeud.posY
@@ -215,7 +210,8 @@ def see(noeud, mapSeen, caseSeen, Map, champVision,n,m):
                             v.obstacle=Map[i][j]
                             mapSeen[i][j]=v
                             caseSeen[i][j]=True
-                           
+                        
+    
 def Trajet(posX_Init,posY_Init,posX_F,posY_F,Map, champVision,n,m):
     noeudI=Noeud(posX_Init,posY_Init)
     noeudF=Noeud(posX_F,posY_F)
@@ -231,10 +227,6 @@ def Trajet(posX_Init,posY_Init,posX_F,posY_F,Map, champVision,n,m):
         if(liste=='impossible de trouver un chemin'):
             return(liste)
         cheminValid=cheminValide(liste,mapSeen,caseSeen)
-        '''
-        print(Noeud.mapSeen(mapSeen))
-        print(Noeud.visualisation(Noeud.mapSeen(mapSeen),liste))
-        '''
         compteAZero(mapSeen,n,m)
         for v in liste:
             see(v,mapSeen, caseSeen,Map,champVision,n,m)
@@ -255,36 +247,6 @@ def compteAZero(mapSeen,n,m):
             v.heuristique=-1
             v.parent=False
             mapSeen[i][j]=v                
-'''           
-def imprime(noeud):
-    return('({},{})'.format(noeud.posX,noeud.posY))
-        
-def imprimeList(liste):
-    n=len(liste)
-    m=[0]*n
-    for i in range(n):
-        m[i]=Noeud.imprime(liste[i])
-    return m
-        
-def imprimeDeep(tab):
-    n=len(tab)
-    m=len(tab[0])
-    l=[]
-    for i in range(n):
-        l.append([0]*m)
-        for j in range(m):
-            l[i][j]=Noeud.imprime(tab[i][j])
-    return l
-    
-def mapSeen(mapSeen):
-    n=len(mapSeen)
-    m=len(mapSeen[0])
-    l=np.ones((n,m),int)
-    for i in range(n):
-        for j in range(m):
-            l[i][j]=mapSeen[i][j].obstacle
-    return(l)
-'''
 def copy(Map):
         
     n=len(Map)
@@ -319,17 +281,11 @@ def imagerize(chemin,n,m):
 
 
 image_init=misc.imread('Carte2.png')
-n,m=image_init.shape
-champVision=50
 t0=time.clock()
 tab,n,m=binarise(image_init,125)
 print("algo start")
 l=Trajet(0,0,n-1,m-1,tab,champVision,n,m)
 print(time.clock()-t0)
-'''
-plt.subplot(211)
-plt.imshow(tab)
-plt.subplot(212)
-'''
+
 plt.imshow(imagerize(visualisation(tab,l),n,m),aspect='auto')
 plt.show()
